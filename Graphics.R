@@ -53,14 +53,14 @@ Graph_station <- function (name_station, variable, period=NULL)
   if(variable == "TMAX")
   {
     y <- "Grados_Centigrados"
-    title <- "Temperatura Mínima"
+    title <- "Temperatura Máxima"
   }
   
   
   if(variable == "TMIN")
   {
     y <- "Grados_Centigrados"
-    title <- "Temperatura Máxima"
+    title <- "Temperatura Mínima"
   }
   
   x <- "Dias"
