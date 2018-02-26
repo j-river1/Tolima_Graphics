@@ -1,6 +1,7 @@
 #libraries 
 
 library(ggplot2)
+library(dplyr)
 
 
 #Read file and put format
@@ -73,6 +74,14 @@ Graph_station <- function (name_station, variable, period=NULL)
   file$Dates <- as.Date(as.character(file$Dates), format = "%Y-%m-%d")
   file$Value <- as.numeric(file$Value)
   
+  #Change per month 
+  file$Dates <- format(file$Dates, "%m")
+  #file_aux <- aggregate(file, by=Dates, FUN= sum)
+  
+  aux <- ddply(file, ~Dates,summarise,mean=mean(Value))
+
+  
+  
   #Data
   colnames(file)[3] <- c("Data")
   levels(file$Data) <- c("Datos_Reales", "Datos_Estimados")
@@ -82,9 +91,9 @@ Graph_station <- function (name_station, variable, period=NULL)
   ggplot(file, aes(x=Dates, y=Value, colour= Data)) + geom_point() + labs(y = y, x = x ) +
   ggtitle(paste0("Estación ", name_station, "\n", title))+ theme(plot.title = element_text(hjust = 0.5))
   ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
-  return (file)
+  return (aux)
   
   
 }
 
-
+ 
