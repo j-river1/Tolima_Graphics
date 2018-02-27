@@ -37,7 +37,7 @@ Graph_station <- function (name_station, variable, period=NULL)
   if(variable == "ESOL")
   {
     y <- "calorias_cm2_diarios"
-    title <- "Radiación Solar"
+    title <- "Radiación Solar Promedio"
   }
   
   if(variable == "RAIN")
@@ -74,6 +74,10 @@ Graph_station <- function (name_station, variable, period=NULL)
   #Format
   file$Dates <- as.Date(as.character(file$Dates), format = "%Y-%m-%d")
   file$Value <- as.numeric(file$Value)
+  
+  #Minimun and maximun value
+  min_value <- min(file$Dates)
+  max_value <- max(file$Dates)
   
   #Change per month 
   file$Dates <- format(file$Dates, "%m")
@@ -114,7 +118,7 @@ Graph_station <- function (name_station, variable, period=NULL)
   
   ggplot(aux, aes(x=Dates, y=mean, group=1))  + geom_line(color="blue")+
   geom_point(color="red") + labs(y = y, x = x ) +
-  ggtitle(paste0("Estación ", name_station, "\n", title))+ theme(plot.title = element_text(hjust = 0.5))
+  ggtitle(paste0("Estación ", name_station, "\n", title, "\n", "Durante el periodo ", min_value, " y ", max_value  ))+ theme(plot.title = element_text(hjust = 0.5))
   ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
   
   
