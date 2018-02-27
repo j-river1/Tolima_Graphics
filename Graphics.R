@@ -2,7 +2,7 @@
 
 library(ggplot2)
 library(dplyr)
-
+library(Hmisc)
 
 #Read file and put format
 
@@ -32,6 +32,7 @@ list_files <- lapply(list.files(here::here('Data'),full.names = T), function (x)
 
 Graph_station <- function (name_station, variable, period=NULL)
 {
+  
   
   if(variable == "ESOL")
   {
@@ -76,11 +77,29 @@ Graph_station <- function (name_station, variable, period=NULL)
   
   #Change per month 
   file$Dates <- format(file$Dates, "%m")
-  #file_aux <- aggregate(file, by=Dates, FUN= sum)
+  aux <- plyr::ddply(file, ~Dates,summarise,mean=mean(Value))
   
-  aux <- ddply(file, ~Dates,summarise,mean=mean(Value))
+  months_aux <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+  
+  
+  #Change number per month
+   aux$Dates[aux$Dates=="01"] <- "Ene"
+   aux$Dates[aux$Dates=="02"] <- "Feb"
+   aux$Dates[aux$Dates=="03"] <- "Mar"
+   aux$Dates[aux$Dates=="04"] <- "Abr"
+   aux$Dates[aux$Dates=="05"] <- "May"
+   aux$Dates[aux$Dates=="06"] <- "Jun"
+   aux$Dates[aux$Dates=="07"] <- "Jul"
+   aux$Dates[aux$Dates=="08"] <- "Ago"
+   aux$Dates[aux$Dates=="09"] <- "Sep"
+   aux$Dates[aux$Dates=="10"] <- "Oct"
+   aux$Dates[aux$Dates=="11"] <- "Nov"
+   aux$Dates[aux$Dates=="12"] <- "Dic"
+   
+   aux <- aux[order(match(aux$Dates, months_aux )),]
+   aux <- within(aux, Dates <- factor(Dates, levels=(months_aux)))
+ 
 
-  
   
   #Data
   colnames(file)[3] <- c("Data")
@@ -88,9 +107,20 @@ Graph_station <- function (name_station, variable, period=NULL)
   
   
   #Plot
-  ggplot(file, aes(x=Dates, y=Value, colour= Data)) + geom_point() + labs(y = y, x = x ) +
+  #ggplot(file, aes(x=Dates, y=Value, colour= Data)) + geom_point() + labs(y = y, x = x ) +
+  #ggtitle(paste0("Estación ", name_station, "\n", title))+ theme(plot.title = element_text(hjust = 0.5))
+  #ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
+  
+  
+  ggplot(aux, aes(x=Dates, y=mean, group=1))  + geom_line(color="blue")+
+  geom_point(color="red") + labs(y = y, x = x ) +
   ggtitle(paste0("Estación ", name_station, "\n", title))+ theme(plot.title = element_text(hjust = 0.5))
   ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
+  
+  
+  
+  
+  
   return (aux)
   
   
