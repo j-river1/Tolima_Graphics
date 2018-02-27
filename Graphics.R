@@ -129,13 +129,179 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
   if(menu== 2)
   {
     
+    values_temp_max <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMAX")), header=T)
+    values_temp_min <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMIN")), header=T)
+    
+    #Format
+    values_temp_max$Dates <- as.Date(as.character(values_temp_max$Dates), format = "%Y-%m-%d")
+    values_temp_min$Dates <- as.Date(as.character(values_temp_min$Dates), format = "%Y-%m-%d")
+    values_temp_max$Value <- as.numeric(values_temp_max$Value)
+    values_temp_min$Value <- as.numeric(values_temp_min$Value)
+    
+    
+    
+    #Minimun and maximun value
+    min_value <- min(values_temp_max$Dates)
+    max_value <- max(values_temp_max$Dates)
+    
+    #Change per month 
+    values_temp_max$Dates <- format(values_temp_max$Dates, "%m")
+    values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+    
+    
+    aux_max <- plyr::ddply(values_temp_max, ~Dates,summarise,mean=mean(Value))
+    aux_min <- plyr::ddply(values_temp_min, ~Dates,summarise,mean=mean(Value))
+    
+    months_aux <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+    
+    
+    #Change number per month max
+    aux_max$Dates[aux_max$Dates=="01"] <- "Ene"
+    aux_max$Dates[aux_max$Dates=="02"] <- "Feb"
+    aux_max$Dates[aux_max$Dates=="03"] <- "Mar"
+    aux_max$Dates[aux_max$Dates=="04"] <- "Abr"
+    aux_max$Dates[aux_max$Dates=="05"] <- "May"
+    aux_max$Dates[aux_max$Dates=="06"] <- "Jun"
+    aux_max$Dates[aux_max$Dates=="07"] <- "Jul"
+    aux_max$Dates[aux_max$Dates=="08"] <- "Ago"
+    aux_max$Dates[aux_max$Dates=="09"] <- "Sep"
+    aux_max$Dates[aux_max$Dates=="10"] <- "Oct"
+    aux_max$Dates[aux_max$Dates=="11"] <- "Nov"
+    aux_max$Dates[aux_max$Dates=="12"] <- "Dic"
+    
+    #Change number per month max
+    aux_min$Dates[aux_min$Dates=="01"] <- "Ene"
+    aux_min$Dates[aux_min$Dates=="02"] <- "Feb"
+    aux_min$Dates[aux_min$Dates=="03"] <- "Mar"
+    aux_min$Dates[aux_min$Dates=="04"] <- "Abr"
+    aux_min$Dates[aux_min$Dates=="05"] <- "May"
+    aux_min$Dates[aux_min$Dates=="06"] <- "Jun"
+    aux_min$Dates[aux_min$Dates=="07"] <- "Jul"
+    aux_min$Dates[aux_min$Dates=="08"] <- "Ago"
+    aux_min$Dates[aux_min$Dates=="09"] <- "Sep"
+    aux_min$Dates[aux_min$Dates=="10"] <- "Oct"
+    aux_min$Dates[aux_min$Dates=="11"] <- "Nov"
+    aux_min$Dates[aux_min$Dates=="12"] <- "Dic"
+    
+    
+    aux_max <- aux_max[order(match(aux_max$Dates, months_aux )),]
+    aux_max <- within(aux_max, Dates <- factor(Dates, levels=(months_aux)))
+    
+    aux_min <- aux_min[order(match(aux_min$Dates, months_aux )),]
+    aux_min <- within(aux_min, Dates <- factor(Dates, levels=(months_aux)))
+    
+    
+    
+    data <- data.frame (Tipo_Temperatura = factor(c(rep(c("Temperatura_Máxima"), 12), rep(c("Temperatura_Mínima"), 12))),
+                        Mes = factor(rep(months_aux, 2), levels=months_aux ),
+                        Values= c(round(as.numeric(aux_max$mean), digits = 0), round(as.numeric(aux_min$mean ), digits = 0)))
+    
+ 
+    ggplot(data, aes(x=Mes, y=Values, group=Tipo_Temperatura, shape=Tipo_Temperatura)) + geom_line(aes(col=Tipo_Temperatura)) + geom_point(aes(col=Tipo_Temperatura)) + geom_text(aes(label=Values),hjust=0, vjust=0)     + 
+    ggtitle(paste0("Estación ", name_station, "\n", "Temperatura Máxima y Mínima Promedio", "\n", "Durante el periodo ", min_value, " y ", max_value)) +  theme(panel.background = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5)) + labs(y = "Grados Centígrados")  + theme(axis.line = element_line(colour = "black")) + 
+    ggsave(paste0("./Graphics/",name_station, "_", "TMaxTmin", ".jpg"))
+    
+    
+    
   }
  
+  if(menu== 3)
+  {
+    values_temp_prec <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "RAIN")), header=T)
+    values_temp_max <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMAX")), header=T)
+    values_temp_min <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMIN")), header=T)
+    
+    #Format
+    values_temp_prec$Dates <- as.Date(as.character(values_temp_prec$Dates), format = "%Y-%m-%d")
+    values_temp_max$Dates <- as.Date(as.character(values_temp_max$Dates), format = "%Y-%m-%d")
+    values_temp_min$Dates <- as.Date(as.character(values_temp_min$Dates), format = "%Y-%m-%d")
+    values_temp_max$Value <- as.numeric(values_temp_max$Value)
+    values_temp_min$Value <- as.numeric(values_temp_min$Value)
+    values_temp_prec$Value <- as.numeric(values_temp_prec$Value)
+    
+    
+    #Minimun and maximun value
+    min_value <- min(values_temp_prec$Dates)
+    max_value <- max(values_temp_prec$Dates)
+    
+    #Change per month 
+    values_temp_prec$Dates <- format(values_temp_prec$Dates, "%m")
+    values_temp_max$Dates <- format(values_temp_max$Dates, "%m")
+    values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+    
+    aux_prec <- plyr::ddply(values_temp_prec, ~Dates,summarise,suma=sum(Value))
+    aux_max <- plyr::ddply(values_temp_max, ~Dates,summarise,mean=mean(Value))
+    aux_min <- plyr::ddply(values_temp_min, ~Dates,summarise,mean=mean(Value))
+    
+    months_aux <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+    
+    #Change number per month max
+    aux_max$Dates[aux_max$Dates=="01"] <- "Ene"
+    aux_max$Dates[aux_max$Dates=="02"] <- "Feb"
+    aux_max$Dates[aux_max$Dates=="03"] <- "Mar"
+    aux_max$Dates[aux_max$Dates=="04"] <- "Abr"
+    aux_max$Dates[aux_max$Dates=="05"] <- "May"
+    aux_max$Dates[aux_max$Dates=="06"] <- "Jun"
+    aux_max$Dates[aux_max$Dates=="07"] <- "Jul"
+    aux_max$Dates[aux_max$Dates=="08"] <- "Ago"
+    aux_max$Dates[aux_max$Dates=="09"] <- "Sep"
+    aux_max$Dates[aux_max$Dates=="10"] <- "Oct"
+    aux_max$Dates[aux_max$Dates=="11"] <- "Nov"
+    aux_max$Dates[aux_max$Dates=="12"] <- "Dic"
+    
+    #Change number per month max
+    aux_min$Dates[aux_min$Dates=="01"] <- "Ene"
+    aux_min$Dates[aux_min$Dates=="02"] <- "Feb"
+    aux_min$Dates[aux_min$Dates=="03"] <- "Mar"
+    aux_min$Dates[aux_min$Dates=="04"] <- "Abr"
+    aux_min$Dates[aux_min$Dates=="05"] <- "May"
+    aux_min$Dates[aux_min$Dates=="06"] <- "Jun"
+    aux_min$Dates[aux_min$Dates=="07"] <- "Jul"
+    aux_min$Dates[aux_min$Dates=="08"] <- "Ago"
+    aux_min$Dates[aux_min$Dates=="09"] <- "Sep"
+    aux_min$Dates[aux_min$Dates=="10"] <- "Oct"
+    aux_min$Dates[aux_min$Dates=="11"] <- "Nov"
+    aux_min$Dates[aux_min$Dates=="12"] <- "Dic"
+    
+    
+    #Change number per month prec
+    aux_prec$Dates[aux_prec$Dates=="01"] <- "Ene"
+    aux_prec$Dates[aux_prec$Dates=="02"] <- "Feb"
+    aux_prec$Dates[aux_prec$Dates=="03"] <- "Mar"
+    aux_prec$Dates[aux_prec$Dates=="04"] <- "Abr"
+    aux_prec$Dates[aux_prec$Dates=="05"] <- "May"
+    aux_prec$Dates[aux_prec$Dates=="06"] <- "Jun"
+    aux_prec$Dates[aux_prec$Dates=="07"] <- "Jul"
+    aux_prec$Dates[aux_prec$Dates=="08"] <- "Ago"
+    aux_prec$Dates[aux_prec$Dates=="09"] <- "Sep"
+    aux_prec$Dates[aux_prec$Dates=="10"] <- "Oct"
+    aux_prec$Dates[aux_prec$Dates=="11"] <- "Nov"
+    aux_prec$Dates[aux_prec$Dates=="12"] <- "Dic"
+    
+    
+    aux_max <- aux_max[order(match(aux_max$Dates, months_aux )),]
+    aux_max <- within(aux_max, Dates <- factor(Dates, levels=(months_aux)))
+    
+    aux_min <- aux_min[order(match(aux_min$Dates, months_aux )),]
+    aux_min <- within(aux_min, Dates <- factor(Dates, levels=(months_aux)))
+    
+    aux_prec <- aux_prec[order(match(aux_prec$Dates, months_aux )),]
+    aux_prec <- within(aux_prec, Dates <- factor(Dates, levels=(months_aux)))    
+    
+    aux_prec$temp_mean <- (aux_max$mean + aux_min$mean)/2
+    
+    
+    
+    
+    #data <- data.frame(Months = seq(1:12), Values_Preci = as.numeric(values_preci), Values_Temp = as.numeric(values_temp))
+    
+    
+  }
   
   
   
-  
-  return (aux)
+  return (aux_prec)
   
   
 }
