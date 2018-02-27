@@ -20,7 +20,7 @@ list_files <- lapply(list.files(here::here('Data'),full.names = T), function (x)
 
 
 #Graph_station plots variable each station 
-#Arguments  - name_station  = name of station e.g. (21255160, MixIbague, Piedra) 
+#Arguments  - name_station  = name of station e.g. (21255160, MixIbague, Piedras) 
 #                           
 #           - variables ESOL = Solar Irradiation
 #                       RAIN = Precipitation
@@ -39,7 +39,7 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
   if(variable == "ESOL")
   {
     y <- "calorias_cm2_diarios"
-    title <- "Radiación Solar Promedio"
+    title <- "Radiación Solar Promedio Diario"
   }
   
   if(variable == "RAIN")
@@ -51,20 +51,20 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
   if(variable == "RHUM")
   {
     y <- "Valor"
-    title <- "Humedad Relativa Promedio"
+    title <- "Humedad Relativa Promedio Diario"
   }
   
   if(variable == "TMAX")
   {
     y <- "Grados_Centigrados"
-    title <- "Temperatura Máxima Promedio"
+    title <- "Temperatura Máxima Promedio Diario"
   }
   
   
   if(variable == "TMIN")
   {
     y <- "Grados_Centigrados"
-    title <- "Temperatura Mínima Promedio"
+    title <- "Temperatura Mínima Promedio Diario"
   }
   
   x <- "Dias"
@@ -104,7 +104,7 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
    
    aux <- aux[order(match(aux$Dates, months_aux )),]
    aux <- within(aux, Dates <- factor(Dates, levels=(months_aux)))
- 
+   aux$mean <- round(aux$mean, digits = 0)
 
   
   #Data
@@ -120,8 +120,8 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
   if (menu == 1)
   {
     ggplot(aux, aes(x=Dates, y=mean, group=1))  + geom_line(color="blue")+
-    geom_point(color="red") + labs(y = y, x = x ) +
-    ggtitle(paste0("Estación ", name_station, "\n", title, "\n", "Durante el periodo ", min_value, " y ", max_value  ))+ theme(plot.title = element_text(hjust = 0.5))
+    geom_point(color="red") + labs(y = y, x = x ) + geom_text(aes(label=mean),hjust=0, vjust=0) + 
+    theme(panel.background = element_blank())+ ggtitle(paste0("Estación ", name_station, "\n", title, "\n", "Durante el periodo ", min_value, " y ", max_value  ))+ theme(plot.title = element_text(hjust = 0.5)) +
     ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
     
   }
@@ -301,7 +301,7 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     matrix_grap <- matrix(nrow=1, ncol=12)
     colnames(matrix_grap) <- months_aux
     matrix_grap[1,] <- as.numeric(aux_prec$suma) 
-    barplot(as.numeric(aux_prec$suma), col= "blue", names.arg= months_aux, ylim= c(0, max(aux_prec$suma)), ylab = "Mililitros", cex.names=0.8, main = paste0("Diagrama de la Temperatura Promedio"), cex.main= 1.5 )
+    barplot(as.numeric(aux_prec$suma), col= "blue", names.arg= months_aux, ylim= c(0, max(aux_prec$suma)), ylab = "Mililitros", cex.names=0.8, main = paste0("Diagrama de la Temperatura y Precipitación Promedio", "\n", "Estacion ", name_station, " Durante ", min_value, " y ", max_value), cex.main= 0.8 )
     par(new = T)
     with(data, plot(Months, Values_Temp, type="b", pch=16,  axes=F, xlab=NA, ylab=NA, cex=1.2, col= "red", ylim = c(min(Values_Temp),max(Values_Temp))))
     axis(side = 4)
