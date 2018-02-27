@@ -292,16 +292,28 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     aux_prec$temp_mean <- (aux_max$mean + aux_min$mean)/2
     
     
+    ggsave(paste0("./Graphics/",name_station, "_", "TMaxTmin", ".jpg"))
     
+    data <- data.frame(Months = seq(1:12), Values_Preci = as.numeric(aux_prec$suma), Values_Temp = as.numeric(aux_prec$temp_mean))
     
-    #data <- data.frame(Months = seq(1:12), Values_Preci = as.numeric(values_preci), Values_Temp = as.numeric(values_temp))
-    
+    jpeg(paste0("./Graphics/",name_station, "_", "Preci_Tempe", ".jpg"), width = 7, height = 7, units = "in", res=90)
+    par(mar=c(5,5,2,5))
+    matrix_grap <- matrix(nrow=1, ncol=12)
+    colnames(matrix_grap) <- months_aux
+    matrix_grap[1,] <- as.numeric(aux_prec$suma) 
+    barplot(as.numeric(aux_prec$suma), col= "blue", names.arg= months_aux, ylim= c(0, max(aux_prec$suma)), ylab = "Mililitros", cex.names=0.8, main = paste0("Diagrama de la Temperatura Promedio"), cex.main= 1.5 )
+    par(new = T)
+    with(data, plot(Months, Values_Temp, type="b", pch=16,  axes=F, xlab=NA, ylab=NA, cex=1.2, col= "red", ylim = c(min(Values_Temp),max(Values_Temp))))
+    axis(side = 4)
+    mtext(side = 4, line = 3, text= 'Grados Centígrados', cex=1)
+    legend("topleft",legend=c("Precipitación", "Temperatura"), lty=c(1,1), pch=c(15, 16), col=c("blue", "red"), cex = 0.8)  
+    dev.off()
     
   }
   
   
   
-  return (aux_prec)
+  #return (aux_prec)
   
   
 }
