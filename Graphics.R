@@ -28,9 +28,11 @@ list_files <- lapply(list.files(here::here('Data'),full.names = T), function (x)
 #                       TMAX = Maximun Temperature
 #                       TMIN = Minimun Temperature
 #           - period         = period of graphic
+#           - menu graphs   1 = Graphs only variable
+#                           2 = Graphs temperature maximun and minimum
 #Return    - graph of station 
 
-Graph_station <- function (name_station, variable, period=NULL)
+Graph_station <- function (name_station, variable, period=NULL, menu)
 {
   
   
@@ -43,26 +45,26 @@ Graph_station <- function (name_station, variable, period=NULL)
   if(variable == "RAIN")
   {
     y <- "Mililitros"
-    title <- "Precipitación"
+    title <- "Precipitación Acumulada"
   }
   
   if(variable == "RHUM")
   {
     y <- "Valor"
-    title <- "Humedad Relativa"
+    title <- "Humedad Relativa Promedio"
   }
   
   if(variable == "TMAX")
   {
     y <- "Grados_Centigrados"
-    title <- "Temperatura Máxima"
+    title <- "Temperatura Máxima Promedio"
   }
   
   
   if(variable == "TMIN")
   {
     y <- "Grados_Centigrados"
-    title <- "Temperatura Mínima"
+    title <- "Temperatura Mínima Promedio"
   }
   
   x <- "Dias"
@@ -115,12 +117,20 @@ Graph_station <- function (name_station, variable, period=NULL)
   #ggtitle(paste0("Estación ", name_station, "\n", title))+ theme(plot.title = element_text(hjust = 0.5))
   #ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
   
+  if (menu == 1)
+  {
+    ggplot(aux, aes(x=Dates, y=mean, group=1))  + geom_line(color="blue")+
+    geom_point(color="red") + labs(y = y, x = x ) +
+    ggtitle(paste0("Estación ", name_station, "\n", title, "\n", "Durante el periodo ", min_value, " y ", max_value  ))+ theme(plot.title = element_text(hjust = 0.5))
+    ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
+    
+  }
   
-  ggplot(aux, aes(x=Dates, y=mean, group=1))  + geom_line(color="blue")+
-  geom_point(color="red") + labs(y = y, x = x ) +
-  ggtitle(paste0("Estación ", name_station, "\n", title, "\n", "Durante el periodo ", min_value, " y ", max_value  ))+ theme(plot.title = element_text(hjust = 0.5))
-  ggsave(paste0("./Graphics/",name_station, "_", variable, ".jpg"))
-  
+  if(menu== 2)
+  {
+    
+  }
+ 
   
   
   
