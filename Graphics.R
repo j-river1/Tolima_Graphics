@@ -631,11 +631,79 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
    
     
   }
+   
+  if(menu == 8)
+  {
     
+    values_temp_prec <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "RAIN")), header=T)
+    
+    #Format
+    values_temp_prec$Dates <- as.Date(as.character(values_temp_prec$Dates), format = "%Y-%m-%d")
+    values_temp_prec$Value <- as.numeric(values_temp_prec$Value)
+    
+    #Put year  
+    values_temp_prec$Year <- as.numeric(format(values_temp_prec$Dates, "%Y"))
+    
+    
+    #Change per month 
+    values_temp_prec$Dates <- format(values_temp_prec$Dates, "%m")
+    
+    
+    #Split per year 
+    split_year <- split(values_temp_prec,values_temp_prec$Year)
+    
+    
+    #Values per month
+    change_names <- lapply(split_year, function(x)
+    {
+      year <- unique(as.numeric(x$Year))
+      x <- plyr::ddply(x, ~Dates,summarise,suma=sum(Value))
+      
+      #Year 
+      x$Year <- year
+      
+      #Change number per month prec
+      x$Dates[x$Dates=="01"] <- "Ene"
+      x$Dates[x$Dates=="02"] <- "Feb"
+      x$Dates[x$Dates=="03"] <- "Mar"
+      x$Dates[x$Dates=="04"] <- "Abr"
+      x$Dates[x$Dates=="05"] <- "May"
+      x$Dates[x$Dates=="06"] <- "Jun"
+      x$Dates[x$Dates=="07"] <- "Jul"
+      x$Dates[x$Dates=="08"] <- "Ago"
+      x$Dates[x$Dates=="09"] <- "Sep"
+      x$Dates[x$Dates=="10"] <- "Oct"
+      x$Dates[x$Dates=="11"] <- "Nov"
+      x$Dates[x$Dates=="12"] <- "Dic"                          
+      
+      x <- x[order(match(x$Dates, months_aux )),]
+      x <- within(x, Dates <- factor(Dates, levels=(months_aux)))
+      
+      return(x)
+      
+    })
+    
+    #Joint Elements list
+    join_list <- do.call("rbind", change_names)
+    join_list$Year <- as.factor(join_list$Year)
+    
+    #ggplot(join_list, aes(x=Dates, y=mean, colour= Year, group= Year)) + geom_bar() + ggtitle(paste("Estación ", name_station, "\n", "Precipitación Acumulada Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+    #  labs(y = "Milímetros", x= "Mes")  
+    
+    colnames(join_list)[3] <- "Año"
+    
+    ggplot(join_list, aes(x=Dates, y = suma, colour= Año, group=Año)) + geom_line()  +  ggtitle(paste("Estación ", name_station, "\n", "Precipitación Acumulada Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+    labs(y = "Milímetros", x= "Mes") 
+    
+    
+    
+    ggsave(paste0("./Graphics/",name_station, "_", "PrecipTotalCurves", ".jpg"))
+    
+  } 
   
   
   
-  return (join_list_final)
+  return (join_list)
   
   
 }
