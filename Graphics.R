@@ -3,6 +3,7 @@
 library(ggplot2)
 library(dplyr)
 library(Hmisc)
+library(ggpubr)
 
 #Read file and put format
 
@@ -31,7 +32,9 @@ list_files <- lapply(list.files(here::here('Data'),full.names = T), function (x)
 #           - menu graphs   1 = Graphs only variable
 #                           2 = Graphs temperature maximun and minimum
 #                           3 = Graphs precipitation and temperature
-#                           4 = 
+#                           4 = Graphs Maximun Temperature
+#                           5 = Graphs Minimun Temperature
+#                           6 = Graphs Precipitation
 #Return    - graph of station 
 
 Graph_station <- function (name_station, variable, period=NULL, menu)
@@ -314,17 +317,12 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
   
   if(menu == 4)
   {
-    values_temp_prec <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "RAIN")), header=T)
+    
     values_temp_max <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMAX")), header=T)
-    values_temp_min <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMIN")), header=T)
     
     #Format
-    values_temp_prec$Dates <- as.Date(as.character(values_temp_prec$Dates), format = "%Y-%m-%d")
     values_temp_max$Dates <- as.Date(as.character(values_temp_max$Dates), format = "%Y-%m-%d")
-    values_temp_min$Dates <- as.Date(as.character(values_temp_min$Dates), format = "%Y-%m-%d")
     values_temp_max$Value <- as.numeric(values_temp_max$Value)
-    values_temp_min$Value <- as.numeric(values_temp_min$Value)
-    values_temp_prec$Value <- as.numeric(values_temp_prec$Value)
     
     
     #Minimun and maximun value
@@ -332,14 +330,12 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     max_value <- max(values_temp_prec$Dates)
     
     #Put year  
-    #values_temp_prec$Dates <- format(values_temp_prec$Dates, "%m")
     values_temp_max$Year <- as.numeric(format(values_temp_max$Dates, "%Y"))
     
 
     #Change per month 
-    values_temp_prec$Dates <- format(values_temp_prec$Dates, "%m")
     values_temp_max$Dates <- format(values_temp_max$Dates, "%m")
-    values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+
     
     #Split per year 
     split_year <- split(values_temp_max,values_temp_max$Year)
@@ -384,15 +380,141 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     
     ggsave(paste0("./Graphics/",name_station, "_", "TMaxTotal", ".jpg"))
     
+  }
+  
+  if(menu == 5)
+  {
     
-    #aux_prec <- plyr::ddply(values_temp_prec, .(Dates, Year), summarize,suma=sum(Value))
+    values_temp_min <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMIN")), header=T)
     
-    #values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+    #Format
+    values_temp_min$Dates <- as.Date(as.character(values_temp_min$Dates), format = "%Y-%m-%d")
+    values_temp_min$Value <- as.numeric(values_temp_min$Value)
     
+    #Put year  
+    values_temp_min$Year <- as.numeric(format(values_temp_min$Dates, "%Y"))
+    
+    
+    #Change per month 
+    values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+    
+    
+    #Split per year 
+    split_year <- split(values_temp_min,values_temp_min$Year)
+    
+    
+    #Values per month
+    change_names <- lapply(split_year, function(x)
+    {
+      year <- unique(as.numeric(x$Year))
+      x <- plyr::ddply(x, ~Dates,summarise,mean=mean(Value))
+      
+      #Year 
+      x$Year <- year
+      
+      #Change number per month prec
+      x$Dates[x$Dates=="01"] <- "Ene"
+      x$Dates[x$Dates=="02"] <- "Feb"
+      x$Dates[x$Dates=="03"] <- "Mar"
+      x$Dates[x$Dates=="04"] <- "Abr"
+      x$Dates[x$Dates=="05"] <- "May"
+      x$Dates[x$Dates=="06"] <- "Jun"
+      x$Dates[x$Dates=="07"] <- "Jul"
+      x$Dates[x$Dates=="08"] <- "Ago"
+      x$Dates[x$Dates=="09"] <- "Sep"
+      x$Dates[x$Dates=="10"] <- "Oct"
+      x$Dates[x$Dates=="11"] <- "Nov"
+      x$Dates[x$Dates=="12"] <- "Dic"                          
+      
+      x <- x[order(match(x$Dates, months_aux )),]
+      x <- within(x, Dates <- factor(Dates, levels=(months_aux)))
+      
+      return(x)
+      
+    })
+    
+    #Joint Elements list
+    join_list <- do.call("rbind", change_names)
+    join_list$Year <- as.factor(join_list$Year)
+    
+    ggplot(join_list, aes(x=Dates, y=mean, colour= Year, group= Year)) + geom_line() + ggtitle(paste("Estación ", name_station, "\n", "Temperatura Mínima Promedio Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+      labs(y = "Grados Centígrados", x= "Mes")  
+    
+    ggsave(paste0("./Graphics/",name_station, "_", "TMinTotal", ".jpg"))
     
   }
   
-  return (join_list)
+  
+  if(menu == 6)
+  {
+    
+    values_temp_prec <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "RAIN")), header=T)
+    
+    #Format
+    values_temp_prec$Dates <- as.Date(as.character(values_temp_prec$Dates), format = "%Y-%m-%d")
+    values_temp_prec$Value <- as.numeric(values_temp_prec$Value)
+    
+    #Put year  
+    values_temp_prec$Year <- as.numeric(format(values_temp_prec$Dates, "%Y"))
+    
+    
+    #Change per month 
+    values_temp_prec$Dates <- format(values_temp_prec$Dates, "%m")
+    
+    
+    #Split per year 
+    split_year <- split(values_temp_prec,values_temp_prec$Year)
+    
+    
+    #Values per month
+    change_names <- lapply(split_year, function(x)
+    {
+      year <- unique(as.numeric(x$Year))
+      x <- plyr::ddply(x, ~Dates,summarise,suma=sum(Value))
+      
+      #Year 
+      x$Year <- year
+      
+      #Change number per month prec
+      x$Dates[x$Dates=="01"] <- "Ene"
+      x$Dates[x$Dates=="02"] <- "Feb"
+      x$Dates[x$Dates=="03"] <- "Mar"
+      x$Dates[x$Dates=="04"] <- "Abr"
+      x$Dates[x$Dates=="05"] <- "May"
+      x$Dates[x$Dates=="06"] <- "Jun"
+      x$Dates[x$Dates=="07"] <- "Jul"
+      x$Dates[x$Dates=="08"] <- "Ago"
+      x$Dates[x$Dates=="09"] <- "Sep"
+      x$Dates[x$Dates=="10"] <- "Oct"
+      x$Dates[x$Dates=="11"] <- "Nov"
+      x$Dates[x$Dates=="12"] <- "Dic"                          
+      
+      x <- x[order(match(x$Dates, months_aux )),]
+      x <- within(x, Dates <- factor(Dates, levels=(months_aux)))
+      
+      return(x)
+      
+    })
+    
+    #Joint Elements list
+    join_list <- do.call("rbind", change_names)
+    join_list$Year <- as.factor(join_list$Year)
+    
+    #ggplot(join_list, aes(x=Dates, y=mean, colour= Year, group= Year)) + geom_bar() + ggtitle(paste("Estación ", name_station, "\n", "Precipitación Acumulada Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+    #  labs(y = "Milímetros", x= "Mes")  
+    
+    names <- colnames(join_list)[3] <- "Año"
+    ggbarplot(join_list, x="Dates", y= "suma", fill= "Año", color = "white") + labs(y = "Milímetros", x= "Mes") + ggtitle(paste("Estación ", name_station, "\n", "Precipitación Acumulada Mensual")) + theme(plot.title = element_text(hjust = 0.5)) 
+    
+    ggsave(paste0("./Graphics/",name_station, "_", "PrecipTotal", ".jpg"))
+    
+  }
+  
+  
+  
+  
+  
+  return (names)
   
   
 }
