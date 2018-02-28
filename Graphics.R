@@ -30,6 +30,8 @@ list_files <- lapply(list.files(here::here('Data'),full.names = T), function (x)
 #           - period         = period of graphic
 #           - menu graphs   1 = Graphs only variable
 #                           2 = Graphs temperature maximun and minimum
+#                           3 = Graphs precipitation and temperature
+#                           4 = 
 #Return    - graph of station 
 
 Graph_station <- function (name_station, variable, period=NULL, menu)
@@ -292,7 +294,6 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     aux_prec$temp_mean <- (aux_max$mean + aux_min$mean)/2
     
     
-    ggsave(paste0("./Graphics/",name_station, "_", "TMaxTmin", ".jpg"))
     
     data <- data.frame(Months = seq(1:12), Values_Preci = as.numeric(aux_prec$suma), Values_Temp = as.numeric(aux_prec$temp_mean))
     
@@ -301,7 +302,7 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     matrix_grap <- matrix(nrow=1, ncol=12)
     colnames(matrix_grap) <- months_aux
     matrix_grap[1,] <- as.numeric(aux_prec$suma) 
-    barplot(as.numeric(aux_prec$suma), col= "blue", names.arg= months_aux, ylim= c(0, max(aux_prec$suma)), ylab = "Mililitros", cex.names=0.8, main = paste0("Diagrama de la Temperatura y Precipitación Promedio", "\n", "Estacion ", name_station, " Durante ", min_value, " y ", max_value), cex.main= 0.8 )
+    barplot(as.numeric(aux_prec$suma), col= "blue", names.arg= months_aux, ylim= c(0, max(aux_prec$suma)), ylab = "Milimetros", cex.names=0.8, main = paste0("Diagrama de la Temperatura y Precipitación Promedio", "\n", "Estacion ", name_station, " Durante ", min_value, " y ", max_value), cex.main= 0.8 )
     par(new = T)
     with(data, plot(Months, Values_Temp, type="b", pch=16,  axes=F, xlab=NA, ylab=NA, cex=1.2, col= "red", ylim = c(min(Values_Temp),max(Values_Temp))))
     axis(side = 4)
@@ -311,9 +312,87 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     
   }
   
+  if(menu == 4)
+  {
+    values_temp_prec <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "RAIN")), header=T)
+    values_temp_max <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMAX")), header=T)
+    values_temp_min <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMIN")), header=T)
+    
+    #Format
+    values_temp_prec$Dates <- as.Date(as.character(values_temp_prec$Dates), format = "%Y-%m-%d")
+    values_temp_max$Dates <- as.Date(as.character(values_temp_max$Dates), format = "%Y-%m-%d")
+    values_temp_min$Dates <- as.Date(as.character(values_temp_min$Dates), format = "%Y-%m-%d")
+    values_temp_max$Value <- as.numeric(values_temp_max$Value)
+    values_temp_min$Value <- as.numeric(values_temp_min$Value)
+    values_temp_prec$Value <- as.numeric(values_temp_prec$Value)
+    
+    
+    #Minimun and maximun value
+    min_value <- min(values_temp_prec$Dates)
+    max_value <- max(values_temp_prec$Dates)
+    
+    #Put year  
+    #values_temp_prec$Dates <- format(values_temp_prec$Dates, "%m")
+    values_temp_max$Year <- as.numeric(format(values_temp_max$Dates, "%Y"))
+    
+
+    #Change per month 
+    values_temp_prec$Dates <- format(values_temp_prec$Dates, "%m")
+    values_temp_max$Dates <- format(values_temp_max$Dates, "%m")
+    values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+    
+    #Split per year 
+    split_year <- split(values_temp_max,values_temp_max$Year)
+    
+    
+    #Values per month
+    change_names <- lapply(split_year, function(x)
+                                       {
+                                        year <- unique(as.numeric(x$Year))
+                                        x <- plyr::ddply(x, ~Dates,summarise,mean=mean(Value))
+                                        
+                                        #Year 
+                                        x$Year <- year
+                                        
+                                        #Change number per month prec
+                                        x$Dates[x$Dates=="01"] <- "Ene"
+                                        x$Dates[x$Dates=="02"] <- "Feb"
+                                        x$Dates[x$Dates=="03"] <- "Mar"
+                                        x$Dates[x$Dates=="04"] <- "Abr"
+                                        x$Dates[x$Dates=="05"] <- "May"
+                                        x$Dates[x$Dates=="06"] <- "Jun"
+                                        x$Dates[x$Dates=="07"] <- "Jul"
+                                        x$Dates[x$Dates=="08"] <- "Ago"
+                                        x$Dates[x$Dates=="09"] <- "Sep"
+                                        x$Dates[x$Dates=="10"] <- "Oct"
+                                        x$Dates[x$Dates=="11"] <- "Nov"
+                                        x$Dates[x$Dates=="12"] <- "Dic"                          
+           
+                                        x <- x[order(match(x$Dates, months_aux )),]
+                                        x <- within(x, Dates <- factor(Dates, levels=(months_aux)))
+                                        
+                                        return(x)
+                                        
+                                       })
+    
+    #Joint Elements list
+    join_list <- do.call("rbind", change_names)
+    join_list$Year <- as.factor(join_list$Year)
+    
+    ggplot(join_list, aes(x=Dates, y=mean, colour= Year, group= Year)) + geom_line() + ggtitle(paste("Estación ", name_station, "\n", "Temperatura Máxima Promedio Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+    labs(y = "Grados Centígrados", x= "Mes")  
+    
+    ggsave(paste0("./Graphics/",name_station, "_", "TMaxTotal", ".jpg"))
+    
+    
+    #aux_prec <- plyr::ddply(values_temp_prec, .(Dates, Year), summarize,suma=sum(Value))
+    
+    #values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+    
+    
+  }
   
-  
-  #return (aux_prec)
+  return (join_list)
   
   
 }
