@@ -34,8 +34,9 @@ list_files <- lapply(list.files(here::here('Data'),full.names = T), function (x)
 #                           3 = Graphs precipitation and temperature
 #                           4 = Graphs Maximun Temperature
 #                           5 = Graphs Minimun Temperature
-#                           6 = Graphs Precipitation
+#                           6 = Graphs Precipitation Bars
 #                           7 = Graphs Maximun and Minimun Temperature
+#                           8 = Graphs Precipitation Lines
 #Return    - graph of station 
 
 Graph_station <- function (name_station, variable, period=NULL, menu)
@@ -613,13 +614,16 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     #Delete repetead columns 
     join_list_final <-join_list_final[, c(-4,-6)]
     
+    #Year as factor
+    join_list_final$Year <- as.factor(join_list_final$Year)
+    
     
     #join_list_final$Year <- as.factor(join_list_final$Year)
     
     #ggplot(join_list_final, aes(x=Dates, y=mean, colour= Year, group= Year)) + geom_line() + ggtitle(paste("Estación ", name_station, "\n", "Temperatura Máxima Promedio Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
      # labs(y = "Grados Centígrados", x= "Mes")  
     
-    ggplot(join_list_final, aes(x=Dates, y=TMAX, colour= Year, group = Year)) + geom_line(aes(y=TMIN)) + ggtitle(paste("Estación ", name_station, "\n", "Temperatura Máxima Promedio Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+    ggplot(join_list_final, aes(x=Dates, colour= Year, group=Year)) + geom_line(aes(y=TMAX)) + geom_line(aes(y=TMIN)) +  ggtitle(paste("Estación ", name_station, "\n", "Temperatura Máxima Y Mínima Promedio Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
      labs(y = "Grados Centígrados", x= "Mes")  
     
     
