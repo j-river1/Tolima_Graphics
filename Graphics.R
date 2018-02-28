@@ -35,6 +35,7 @@ list_files <- lapply(list.files(here::here('Data'),full.names = T), function (x)
 #                           4 = Graphs Maximun Temperature
 #                           5 = Graphs Minimun Temperature
 #                           6 = Graphs Precipitation
+#                           7 = Graphs Maximun and Minimun Temperature
 #Return    - graph of station 
 
 Graph_station <- function (name_station, variable, period=NULL, menu)
@@ -510,11 +511,127 @@ Graph_station <- function (name_station, variable, period=NULL, menu)
     
   }
   
+  if(menu == 7)
+  {
+    values_temp_max <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMAX")), header=T)
+    values_temp_min <- read.table(list.files(here::here('Data'),full.names = T, pattern = paste0(name_station, "_", "TMIN")), header=T)
+    
+    #Format
+    values_temp_max$Dates <- as.Date(as.character(values_temp_max$Dates), format = "%Y-%m-%d")
+    values_temp_max$Value <- as.numeric(values_temp_max$Value)
+    values_temp_min$Dates <- as.Date(as.character(values_temp_min$Dates), format = "%Y-%m-%d")
+    values_temp_min$Value <- as.numeric(values_temp_min$Value)
+    
+    
+    #Minimun and maximun value
+    min_value <- min(values_temp_max$Dates)
+    max_value <- max(values_temp_max$Dates)
+    
+    #Put year  
+    values_temp_max$Year <- as.numeric(format(values_temp_max$Dates, "%Y"))
+    values_temp_min$Year <- as.numeric(format(values_temp_min$Dates, "%Y"))
+    
+    #Change per month 
+    values_temp_max$Dates <- format(values_temp_max$Dates, "%m")
+    values_temp_min$Dates <- format(values_temp_min$Dates, "%m")
+    
+    
+    #Split per year 
+    split_year_max <- split(values_temp_max,values_temp_max$Year)
+    split_year_min <- split(values_temp_min,values_temp_min$Year)
+    
+    
+    #Values per month
+    change_names_max <- lapply(split_year_max, function(x)
+    {
+      year <- unique(as.numeric(x$Year))
+      x <- plyr::ddply(x, ~Dates,summarise,mean=mean(Value))
+      
+      #Year 
+      x$Year <- year
+      
+      #Change number per month prec
+      x$Dates[x$Dates=="01"] <- "Ene"
+      x$Dates[x$Dates=="02"] <- "Feb"
+      x$Dates[x$Dates=="03"] <- "Mar"
+      x$Dates[x$Dates=="04"] <- "Abr"
+      x$Dates[x$Dates=="05"] <- "May"
+      x$Dates[x$Dates=="06"] <- "Jun"
+      x$Dates[x$Dates=="07"] <- "Jul"
+      x$Dates[x$Dates=="08"] <- "Ago"
+      x$Dates[x$Dates=="09"] <- "Sep"
+      x$Dates[x$Dates=="10"] <- "Oct"
+      x$Dates[x$Dates=="11"] <- "Nov"
+      x$Dates[x$Dates=="12"] <- "Dic"                          
+      
+      x <- x[order(match(x$Dates, months_aux )),]
+      x <- within(x, Dates <- factor(Dates, levels=(months_aux)))
+      
+      return(x)
+      
+    })
+    
+    change_names_min <- lapply(split_year_min, function(x)
+    {
+      year <- unique(as.numeric(x$Year))
+      x <- plyr::ddply(x, ~Dates,summarise,mean=mean(Value))
+      
+      #Year 
+      x$Year <- year
+      
+      #Change number per month prec
+      x$Dates[x$Dates=="01"] <- "Ene"
+      x$Dates[x$Dates=="02"] <- "Feb"
+      x$Dates[x$Dates=="03"] <- "Mar"
+      x$Dates[x$Dates=="04"] <- "Abr"
+      x$Dates[x$Dates=="05"] <- "May"
+      x$Dates[x$Dates=="06"] <- "Jun"
+      x$Dates[x$Dates=="07"] <- "Jul"
+      x$Dates[x$Dates=="08"] <- "Ago"
+      x$Dates[x$Dates=="09"] <- "Sep"
+      x$Dates[x$Dates=="10"] <- "Oct"
+      x$Dates[x$Dates=="11"] <- "Nov"
+      x$Dates[x$Dates=="12"] <- "Dic"                          
+      
+      x <- x[order(match(x$Dates, months_aux )),]
+      x <- within(x, Dates <- factor(Dates, levels=(months_aux)))
+      
+      return(x)
+      
+    })
+    
+    
+    #Joint Elements list
+    join_list_min <- do.call("rbind", change_names_min)
+    colnames(join_list_min)[2] <- "TMIN"
+    join_list_max <- do.call("rbind", change_names_max)
+    colnames(join_list_max)[2] <- "TMAX"
+    
+    #Join two list 
+    join_list_final <- cbind(join_list_min,join_list_max)
+    
+    #Delete repetead columns 
+    join_list_final <-join_list_final[, c(-4,-6)]
+    
+    
+    #join_list_final$Year <- as.factor(join_list_final$Year)
+    
+    #ggplot(join_list_final, aes(x=Dates, y=mean, colour= Year, group= Year)) + geom_line() + ggtitle(paste("Estación ", name_station, "\n", "Temperatura Máxima Promedio Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+     # labs(y = "Grados Centígrados", x= "Mes")  
+    
+    ggplot(join_list_final, aes(x=Dates, y=TMAX, colour= Year, group = Year)) + geom_line(aes(y=TMIN)) + ggtitle(paste("Estación ", name_station, "\n", "Temperatura Máxima Promedio Mensual")) + theme(plot.title = element_text(hjust = 0.5)) +
+     labs(y = "Grados Centígrados", x= "Mes")  
+    
+    
+    ggsave(paste0("./Graphics/",name_station, "_", "JoinTmaxTmin", ".jpg"))
+   
+    
+  }
+    
   
   
   
-  
-  return (names)
+  return (join_list_final)
   
   
 }
